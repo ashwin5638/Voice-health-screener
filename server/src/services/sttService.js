@@ -107,6 +107,8 @@ export async function transcribeAudio(audioBuffer) {
       chunk_length_s: 30,
       stride_length_s: 5,
       return_timestamps: false,
+      frequency_penalty: 0.0,
+      condition_on_previous_text: false,
     });
     const text = (output?.text || '').trim();
     let language = normalizeLanguage(output?.language);

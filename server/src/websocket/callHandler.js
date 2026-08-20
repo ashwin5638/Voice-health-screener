@@ -4,6 +4,8 @@ import { buildReport } from '../services/reportService.js';
 
 const TARGET_SAMPLE_RATE = 16000;
 const OPEN = 1;
+const MIN_AUDIO_RMS = 0.008;
+const WHISPER_HALLUCINATIONS = /^(thank you|thanks for watching|thanks for viewing|thank you for watching|thank you for viewing|subscribe|bye|goodbye|you|hello|hi|so|um|uh|ah|okay|ok|yeah|yes|no|well|and|the|a|i|it|that|this|what|how|my|me|i'm|i am)\s*[.!?]*$/i;
 
 export function createCallHandler(ws) {
   const session = {
@@ -64,12 +66,17 @@ async function handleAudioChunk(ws, session, payload) {
       let pcm = item.audio;
       if (item.sampleRate !== TARGET_SAMPLE_RATE) pcm = resampleLinear(pcm, item.sampleRate, TARGET_SAMPLE_RATE);
 
+      if (computeRms(pcm) < MIN_AUDIO_RMS) {
+        if (session.active && !session.stopRequested) send(ws, 'STATUS', { status: 'LISTENING' });
+        continue;
+      }
+
       let transcript;
       try { transcript = await transcribeAudio(pcm); }
       catch (err) { sendError(ws, `Transcription failed: ${err.message}`); continue; }
 
       const text = (transcript?.text || '').trim();
-      if (!text) {
+      if (!text || isHallucination(text)) {
         if (session.active && !session.stopRequested) send(ws, 'STATUS', { status: 'LISTENING' });
         continue;
       }
@@ -112,6 +119,21 @@ function send(ws, event, data) {
   if (ws.readyState === OPEN) ws.send(JSON.stringify({ event, ...data }));
 }
 function sendError(ws, message) { send(ws, 'ERROR', { message }); }
+
+function computeRms(pcm) {
+  if (!pcm || pcm.length === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i];
+  return Math.sqrt(sum / pcm.length);
+}
+
+function isHallucination(text) {
+  if (!text) return true;
+  const trimmed = text.trim();
+  if (trimmed.length <= 1) return true;
+  if (WHISPER_HALLUCINATIONS.test(trimmed)) return true;
+  return false;
+}
 
 function resampleLinear(input, fromRate, toRate) {
   if (fromRate === toRate) return input;

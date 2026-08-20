@@ -19,5 +19,5 @@ server.listen(env.PORT, () => {
   console.log(`\n🩺  Voice Health Screener server`);
   console.log(`    HTTP:     http://localhost:${env.PORT}`);
   console.log(`    WebSocket:ws://localhost:${env.PORT}/ws`);
-  if (!env.OPENROUTER_API_KEY) console.warn('    ⚠️  OPENROUTER_API_KEY is not set — LLM calls will fail.');
+  if (!env.GEMINI_API_KEY && !env.OPENROUTER_API_KEY) console.warn('    ⚠️  No LLM API keys set — set GEMINI_API_KEY or OPENROUTER_API_KEY.');
 });

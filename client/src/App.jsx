@@ -131,7 +131,7 @@ export default function App() {
 
         <footer className="text-center mt-10 pb-6">
           <p className="text-xs text-slate-400">
-            STT: Whisper Large-v3 Turbo (Transformers.js) &middot; LLM: OpenRouter &middot; TTS: Browser SpeechSynthesis
+            STT: Whisper Large-v3 Turbo (Transformers.js) &middot; LLM: Gemini + OpenRouter &middot; TTS: Browser SpeechSynthesis
           </p>
         </footer>
       </div>
