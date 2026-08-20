@@ -162,6 +162,4 @@ When Gemini returns a 429 (rate limit) or 401 (auth error), the app automaticall
 | `FINAL_REPORT` | Server → Client | Generated health report |
 | `ERROR` | Server → Client | Error messages |
 
-## License
 
-MIT
