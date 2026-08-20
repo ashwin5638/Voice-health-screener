@@ -88,9 +88,10 @@ export function useAudioRecorder({ onUtterance, onStatus } = {}) {
       return true;
     } catch (err) {
       console.error('[AudioRecorder] start failed:', err);
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') setError('Microphone permission denied.');
-      else if (err?.name === 'NotFoundError') setError('No microphone device found.');
-      else if (err?.name === 'NotReadableError') setError('Microphone is already in use.');
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') setError('Microphone permission denied. Please allow mic access and try again.');
+      else if (err?.name === 'NotFoundError') setError('No microphone found. Please connect a microphone (headset, earbuds, or built-in mic) and try again.');
+      else if (err?.name === 'NotReadableError') setError('Microphone is already in use by another app.');
+      else if (window.location.protocol !== 'https:') setError('Microphone requires HTTPS. Please use the deployed URL.');
       else setError(err?.message || 'Failed to start microphone.');
       cleanup();
       return false;
