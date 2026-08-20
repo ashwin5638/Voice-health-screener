@@ -1,133 +1,64 @@
-import { pipeline, env as transformersEnv } from '@huggingface/transformers';
-import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import OpenAI from 'openai';
+import { env } from '../config/env.js';
 
-transformersEnv.allowLocalModels = false;
-
-const MODEL_CACHE_DIR = join(
-  transformersEnv.cacheDir || join(process.cwd(), 'node_modules', '@huggingface', 'transformers', '.cache'),
-  'onnx-community',
-  'whisper-large-v3-turbo',
-);
-
-let transcriber = null;
-let loadingPromise = null;
-
-async function clearModelCache() {
-  try {
-    await rm(MODEL_CACHE_DIR, { recursive: true, force: true });
-    console.log('[STT] Cleared corrupted model cache.');
-  } catch {
-    console.warn('[STT] Could not clear model cache directory.');
-  }
-}
-
-async function loadModel(attempt = 1, maxAttempts = 3) {
-  if (transcriber) return transcriber;
-  if (loadingPromise) return loadingPromise;
-
-  loadingPromise = (async () => {
-    for (let i = attempt; i <= maxAttempts; i++) {
-      try {
-        console.log(`[STT] Loading whisper-large-v3-turbo (attempt ${i}/${maxAttempts})...`);
-        transcriber = await pipeline(
-          'automatic-speech-recognition',
-          'onnx-community/whisper-large-v3-turbo',
-          {
-            dtype: {
-              encoder_model: 'q8',
-              decoder_model: 'q8',
-              decoder_model_merged: 'q8',
-            },
-            device: 'cpu',
-            progress_callback: (info) => {
-              if (info?.status === 'progress') {
-                console.log(`[STT] ${info.file}: ${(info.progress || 0).toFixed(1)}%`);
-              }
-            },
-          }
-        );
-        console.log('[STT] Whisper model ready.');
-        return transcriber;
-      } catch (err) {
-        const isCorrupt =
-          err.message?.includes('Protobuf parsing failed') ||
-          err.message?.includes('invalid') ||
-          err.message?.includes('truncated');
-        console.error(`[STT] Load attempt ${i} failed: ${err.message}`);
-        if (isCorrupt && i < maxAttempts) {
-          console.log('[STT] Model cache may be corrupted. Clearing and retrying...');
-          transcriber = null;
-          loadingPromise = null;
-          await clearModelCache();
-        } else if (i >= maxAttempts) {
-          throw err;
-        }
-      }
-    }
-  })();
-
-  return loadingPromise;
-}
-
-loadModel().catch((err) => {
-  console.error('[STT] Background load failed; will retry on first request:', err.message);
-  loadingPromise = null;
+const groq = new OpenAI({
+  apiKey: env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
 });
 
-const LANG_NAME_TO_CODE = {
-  english: 'en', hindi: 'hi', bengali: 'bn', tamil: 'ta', telugu: 'te',
-  marathi: 'mr', gujarati: 'gu', kannada: 'kn', malayalam: 'ml', punjabi: 'pa',
-  urdu: 'ur', spanish: 'es', french: 'fr', german: 'de', chinese: 'zh',
-  arabic: 'ar', japanese: 'ja', russian: 'ru',
-};
+function pcmFloat32ToWavBlob(float32Array, sampleRate = 16000) {
+  const int16 = new Int16Array(float32Array.length);
+  for (let i = 0; i < float32Array.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32Array[i]));
+    int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
 
-function detectLanguageFromText(text) {
-  if (!text) return 'unknown';
-  if (/[\u0900-\u097F]/.test(text)) return 'hi';
-  if (/^[A-Za-z0-9\s.,!?'"'-]+$/.test(text)) return 'en';
-  return 'unknown';
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = int16.byteLength;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+  new Int16Array(buffer, 44).set(int16);
+
+  return new File([buffer], 'audio.wav', { type: 'audio/wav' });
 }
 
-function normalizeLanguage(lang) {
-  if (!lang) return 'unknown';
-  const k = String(lang).toLowerCase();
-  if (LANG_NAME_TO_CODE[k]) return LANG_NAME_TO_CODE[k];
-  if (k.length >= 2) return k.slice(0, 2);
-  return 'unknown';
+function writeString(view, offset, str) {
+  for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
 }
 
 export async function transcribeAudio(audioBuffer) {
   if (!audioBuffer || audioBuffer.length === 0) return { text: '', language: 'unknown' };
-  try {
-    const pipe = await loadModel();
-    const output = await pipe(audioBuffer, {
-      language: null,
-      task: 'transcribe',
-      chunk_length_s: 30,
-      stride_length_s: 5,
-      return_timestamps: false,
-      frequency_penalty: 0.0,
-      condition_on_previous_text: false,
-    });
-    const text = (output?.text || '').trim();
-    let language = normalizeLanguage(output?.language);
-    if (language === 'unknown' || !language) language = detectLanguageFromText(text);
-    return { text, language };
-  } catch (err) {
-    const isModelLoadErr = err.message?.includes('Protobuf parsing failed') || err.message?.includes('Load model');
-    if (isModelLoadErr) {
-      console.error('[STT] Model load failed during transcription, clearing state for retry:', err.message);
-      transcriber = null;
-      loadingPromise = null;
-    }
-    console.error('[STT] Transcription error:', err);
-    throw new Error(`Transcription failed: ${err.message}`);
-  }
+
+  const wavFile = pcmFloat32ToWavBlob(audioBuffer, 16000);
+
+  const result = await groq.audio.transcriptions.create({
+    model: 'whisper-large-v3-turbo',
+    file: wavFile,
+    response_format: 'json',
+  });
+
+  const text = (result?.text || '').trim();
+  return { text, language: 'en' };
 }
 
 export function getSTTStatus() {
-  if (transcriber) return 'ready';
-  if (loadingPromise) return 'loading';
-  return 'idle';
+  return env.GROQ_API_KEY ? 'ready' : 'no_api_key';
 }

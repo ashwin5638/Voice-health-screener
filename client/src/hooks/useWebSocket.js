@@ -10,7 +10,8 @@ export function useWebSocket({ onMessage } = {}) {
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${protocol}//${window.location.host}/ws`;
+    const wsBase = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}`;
+    const url = `${wsBase}/ws`;
     let ws;
     try { ws = new WebSocket(url); } catch (e) { setError(e.message); return; }
     wsRef.current = ws;

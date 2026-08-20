@@ -1,6 +1,6 @@
 # Voice Health Screener
 
-A preliminary AI-powered voice intake assistant that collects patient information through natural conversation in English or Hindi. It transcribes speech locally, generates empathetic replies via LLM, and produces a structured intake report.
+A preliminary AI-powered voice intake assistant that collects patient information through natural conversation in English or Hindi. It transcribes speech via Groq Whisper API, generates empathetic replies via LLM, and produces a structured intake report.
 
 > **Disclaimer:** This is a screening tool, not a medical diagnostic. Always consult a licensed healthcare provider.
 
@@ -12,7 +12,7 @@ A preliminary AI-powered voice intake assistant that collects patient informatio
 │  (Vite)      │                  │                                  │
 │              │                  │  ┌───────────┐  ┌─────────────┐  │
 │  - Recorder  │                  │  │ Whisper   │  │ LLM         │  │
-│  - TTS       │                  │  │ (local)   │  │ (Gemini →   │  │
+│  - TTS       │                  │  │ (Groq API)│  │ (Gemini →   │  │
 │  - Transcript│                  │  └───────────┘  │  OpenRouter) │  │
 │  - Report UI │                  │                 └─────────────┘  │
 └──────────────┘                  └──────────────────────────────────┘
@@ -23,7 +23,7 @@ A preliminary AI-powered voice intake assistant that collects patient informatio
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | React 18, Vite, Tailwind CSS v4 |
-| **Speech-to-Text** | Whisper Large-v3 Turbo (ONNX via Transformers.js, runs locally on server CPU) |
+| **Speech-to-Text** | Whisper Large-v3 Turbo via Groq API |
 | **LLM** | Gemini 3.5 Flash-Lite (primary) with OpenRouter fallback |
 | **Text-to-Speech** | Browser SpeechSynthesis API |
 | **Transport** | WebSocket (real-time bidirectional audio + messages) |
@@ -32,12 +32,12 @@ A preliminary AI-powered voice intake assistant that collects patient informatio
 
 - Real-time voice conversation with an AI health intake assistant
 - Supports English and Hindi (auto-detected)
-- Runs Whisper STT locally — no external speech API needed
 - Multi-provider LLM with automatic fallback (Gemini → OpenRouter)
-- Whisper hallucination filtering
+- Whisper STT via Groq API (fast, no local model needed)
 - Audio silence detection to skip empty utterances
 - Structured JSON health report generation
 - Red-flag symptom detection with emergency escalation
+- Free to run ($0/month with free API tiers)
 
 ## Project Structure
 
@@ -78,7 +78,8 @@ voice-health-screener/
 
 - Node.js 18+
 - npm
-- A Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) (free, no credit card)
+- A Groq API key from [console.groq.com](https://console.groq.com) (free, for Whisper STT)
+- A Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) (free, for LLM)
 
 ## Setup
 
@@ -103,6 +104,9 @@ Create `server/.env`:
 PORT=5000
 CLIENT_URL=http://localhost:5173
 
+# Speech-to-Text (required)
+GROQ_API_KEY=your_groq_api_key
+
 # LLM (Gemini is primary, OpenRouter is fallback — set either or both)
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-3.5-flash-lite
@@ -124,7 +128,28 @@ cd client && npm run dev
 
 Open http://localhost:5173 in your browser.
 
-> **Note:** The first run downloads the Whisper model (~1.5 GB). Subsequent starts use the cached model.
+## Deployment (Free)
+
+### Backend — Render
+
+1. Push your repo to GitHub
+2. Go to [render.com](https://render.com) → New → Web Service
+3. Connect your GitHub repo, set **Root Directory** to `server`
+4. Add environment variables:
+   - `GROQ_API_KEY` — from [console.groq.com](https://console.groq.com)
+   - `GEMINI_API_KEY` — from [Google AI Studio](https://aistudio.google.com/apikey)
+   - `CLIENT_URL` — your Vercel frontend URL (e.g. `https://your-app.vercel.app`)
+5. Deploy — Render auto-detects Node.js
+
+### Frontend — Vercel
+
+1. Go to [vercel.com](https://vercel.com) → New Project
+2. Connect your GitHub repo, set **Root Directory** to `client`
+3. Add environment variable:
+   - `VITE_WS_URL` — your Render backend URL (e.g. `wss://your-app.onrender.com`)
+4. Deploy
+
+> **Note:** Free tier Render services spin down after 15 min of inactivity. First request after idle takes ~30s to wake up.
 
 ## LLM Provider Fallback
 

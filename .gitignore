@@ -31,3 +31,6 @@ coverage/
 # Temp
 tmp/
 .temp/
+
+# Render
+render.yaml
