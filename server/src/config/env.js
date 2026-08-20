@@ -10,5 +10,4 @@ export const env = {
   GEMINI_BASE_URL: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/',
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
   PORT: parseInt(process.env.PORT || '5000', 10),
-  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
 };

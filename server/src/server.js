@@ -6,8 +6,7 @@ import { env } from './config/env.js';
 import { createCallHandler } from './websocket/callHandler.js';
 
 const app = express();
-const allowedOrigins = [env.CLIENT_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : ''].filter(Boolean);
-app.use(cors({ origin: allowedOrigins.length > 1 ? allowedOrigins : allowedOrigins[0] || true }));
+app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'voice-health-screener' }));
 

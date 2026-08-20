@@ -102,7 +102,6 @@ Create `server/.env`:
 
 ```env
 PORT=5000
-CLIENT_URL=http://localhost:5173
 
 # Speech-to-Text (required)
 GROQ_API_KEY=your_groq_api_key
@@ -138,7 +137,6 @@ Open http://localhost:5173 in your browser.
 4. Add environment variables:
    - `GROQ_API_KEY` — from [console.groq.com](https://console.groq.com)
    - `GEMINI_API_KEY` — from [Google AI Studio](https://aistudio.google.com/apikey)
-   - `CLIENT_URL` — your Vercel frontend URL (e.g. `https://your-app.vercel.app`)
 5. Deploy — Render auto-detects Node.js
 
 ### Frontend — Vercel
