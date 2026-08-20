@@ -1,39 +1,35 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --bg: #0f172a; --panel: #1e293b; --text: #f1f5f9; --muted: #94a3b8; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
-.app { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
-.app-header { text-align: center; margin-bottom: 2rem; }
-.app-header h1 { font-size: 2.25rem; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
-.app-subtitle { color: var(--muted); font-size: 0.95rem; }
-.app-main { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem; }
-@media (max-width: 768px) { .app-main { grid-template-columns: 1fr; } }
-.left-panel, .right-panel { background: var(--panel); border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(148, 163, 184, 0.12); }
-.control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.status-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.85rem; background: rgba(0,0,0,0.3); border-radius: 999px; font-size: 0.875rem; }
-.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--status-color, #6b7280); }
-.status-dot.pulse { animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.55); } 50% { box-shadow: 0 0 0 8px rgba(255,255,255,0); } }
-.ws-indicator { font-size: 0.75rem; color: var(--muted); }
-.ws-indicator.ok { color: #10b981; } .ws-indicator.bad { color: #ef4444; }
-.call-controls { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
-.call-btn { padding: 0.85rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 999px; border: none; cursor: pointer; color: white; background: linear-gradient(135deg, #10b981, #059669); transition: all 0.2s; }
-.call-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.4); }
-.call-btn.active { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.call-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.visualizer { flex: 1; height: 64px; opacity: 0.85; }
-.hint { margin-top: 1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
-.error-banner { margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 0.5rem; color: #fca5a5; font-size: 0.875rem; }
-.transcript h3, .health-report h3 { margin-bottom: 1rem; font-size: 1.1rem; }
-.transcript-list { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem; }
-.transcript-empty { color: var(--muted); font-style: italic; text-align: center; padding: 2rem 0; }
-.message { padding: 0.65rem 0.85rem; border-radius: 0.5rem; max-width: 88%; line-height: 1.45; }
-.message-user { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25); align-self: flex-end; }
-.message-agent { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25); align-self: flex-start; }
-.message-role { display: inline-block; font-size: 0.65rem; color: var(--muted); margin-right: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.health-report { margin-top: 1.5rem; border-top: 1px solid rgba(148,163,184,0.2); padding-top: 1rem; }
-.report-disclaimer { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: 0.5rem; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: #fcd34d; margin-bottom: 1rem; }
-.red-flag { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 0.5rem; padding: 0.75rem; color: #fca5a5; font-weight: 600; margin-bottom: 1rem; }
-.report-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem 1rem; font-size: 0.875rem; }
-.report-grid dt { color: var(--muted); } .report-grid dd { color: var(--text); }
-.report-timestamp { margin-top: 1rem; font-size: 0.75rem; color: var(--muted); text-align: right; }
-.app-footer { text-align: center; margin-top: 2rem; color: var(--muted); font-size: 0.75rem; }
+@import "tailwindcss";
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-ring-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+}
+
+@keyframes pulse-ring-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+@keyframes pulse-ring-violet {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0); }
+}
+
+@keyframes pulse-ring-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
