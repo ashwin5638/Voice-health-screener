@@ -127,29 +127,11 @@ cd client && npm run dev
 
 Open http://localhost:5173 in your browser.
 
-## Deployment (Free)
+## Deployment 
 
 ### Backend — Render
 
-1. Push your repo to GitHub
-2. Go to [render.com](https://render.com) → New → Web Service
-3. Connect your GitHub repo, set **Root Directory** to `server`
-4. Add environment variables:
-   - `GROQ_API_KEY` — from [console.groq.com](https://console.groq.com)
-   - `GEMINI_API_KEY` — from [Google AI Studio](https://aistudio.google.com/apikey)
-5. Deploy — Render auto-detects Node.js
-
 ### Frontend — Vercel
-
-1. Go to [vercel.com](https://vercel.com) → New Project
-2. Connect your GitHub repo, set **Root Directory** to `client`
-3. Add environment variable:
-   - `VITE_WS_URL` — your Render backend URL (e.g. `wss://your-app.onrender.com`)
-4. Deploy
-
-> **Note:** Free tier Render services spin down after 15 min of inactivity. First request after idle takes ~30s to wake up.
-
-## LLM Provider Fallback
 
 The app uses a multi-provider fallback strategy to maximize free-tier usage:
 
