@@ -2,8 +2,6 @@
 
 A preliminary AI-powered voice intake assistant that collects patient information through natural conversation in English or Hindi. It transcribes speech via Groq Whisper API, generates empathetic replies via LLM, and produces a structured intake report.
 
-> **Disclaimer:** This is a screening tool, not a medical diagnostic. Always consult a licensed healthcare provider.
-
 ## Architecture
 
 ```
